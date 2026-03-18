@@ -1,0 +1,575 @@
+/* 不動產說明書編輯器樣式表 */
+
+:root {
+    --primary-color: #2c3e50;
+    --border-color: #ddd;
+    --textbox-border: 2px dashed #ff6b6b;
+    --textbox-bg: rgba(255, 107, 107, 0.05);
+    --selected-border: 2px solid #2563eb;
+    --selected-bg: rgba(37, 99, 235, 0.08);
+    --print-margin-top: 0mm;
+    --print-margin-bottom: 0mm;
+    --print-margin-left: 0mm;
+    --print-margin-right: 0mm;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "微軟正黑體", "Arial", sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+/* ─── 頂部工具列 ─── */
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    gap: 16px;
+}
+
+.toolbar-left,
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn {
+    padding: 8px 14px;
+    background-color: #555;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+    transition: background-color 0.2s;
+}
+
+.btn:hover {
+    background-color: #666;
+}
+
+.btn-primary {
+    background-color: #2563eb;
+}
+
+.btn-primary:hover {
+    background-color: #1d4ed8;
+}
+
+.btn-danger {
+    background-color: #dc2626;
+    width: 100%;
+}
+
+.btn-danger:hover {
+    background-color: #b91c1c;
+}
+
+.divider {
+    width: 1px;
+    height: 24px;
+    background-color: #888;
+}
+
+/* ─── 主版面 ─── */
+.main-layout {
+    display: flex;
+    height: calc(100vh - 62px);
+    overflow: hidden;
+}
+
+/* 左側：頁面欄 */
+.page-panel {
+    width: 120px;
+    background-color: #f9f9f9;
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    padding: 12px 8px;
+}
+
+.page-panel-title {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    padding: 0 4px;
+}
+
+.page-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.page-thumb {
+    width: 100%;
+    aspect-ratio: 8.5 / 11;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    background-color: white;
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.page-thumb:hover {
+    border-color: var(--border-color);
+}
+
+.page-thumb.active {
+    border-color: #2563eb;
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.3);
+}
+
+.page-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* 中央：畫布區 */
+.canvas-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e5e5e5;
+    padding: 16px;
+    overflow: auto;
+}
+
+.canvas-area {
+    position: relative;
+    background-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: fit-content;
+    height: fit-content;
+}
+
+.bg-image {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.textbox-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* 右側：屬性欄 */
+.props-panel {
+    width: 240px;
+    background-color: #f9f9f9;
+    border-left: 1px solid var(--border-color);
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.props-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.props-empty {
+    padding: 16px;
+    text-align: center;
+    color: #999;
+    font-size: 12px;
+    background-color: white;
+    border-radius: 4px;
+    border: 1px dashed var(--border-color);
+}
+
+.props-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.prop-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.prop-group label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #555;
+}
+
+.input-text,
+.input-select,
+.input-color {
+    padding: 6px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: inherit;
+}
+
+.input-color {
+    height: 32px;
+    cursor: pointer;
+}
+
+.input-select,
+.input-text {
+    background-color: white;
+}
+
+/* ─── 文字框樣式 ─── */
+.textbox {
+    position: absolute;
+    border: var(--textbox-border);
+    background-color: var(--textbox-bg);
+    padding: 4px;
+    cursor: move;
+    user-select: none;
+    transition: box-shadow 0.2s;
+}
+
+.textbox:hover {
+    box-shadow: inset 0 0 0 1px #ff9999;
+}
+
+.textbox.selected {
+    border: var(--selected-border);
+    background-color: var(--selected-bg);
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.3);
+}
+
+.textbox-content {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+.textbox-content[contenteditable="true"] {
+    outline: 1px solid #2563eb;
+    background-color: white;
+}
+
+.resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    background-color: #2563eb;
+    cursor: nwse-resize;
+    border-radius: 2px;
+    display: none;
+}
+
+.textbox.selected .resize-handle {
+    display: block;
+}
+
+.field-tag {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: 9px;
+    background-color: #2563eb;
+    color: white;
+    padding: 2px 4px;
+    border-radius: 2px;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+/* ─── Modal ─── */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal.hidden {
+    display: none !important;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-sm {
+    max-width: 400px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--primary-color);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    color: #333;
+}
+
+.modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.modal-footer .btn {
+    min-width: 80px;
+}
+
+/* ─── 列印預覽相關 ─── */
+.print-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.control-group label {
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.slider {
+    flex: 1;
+    height: 6px;
+    cursor: pointer;
+}
+
+.control-group span {
+    font-size: 12px;
+    min-width: 30px;
+    text-align: right;
+}
+
+.print-preview {
+    background-color: #f5f5f5;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 16px;
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+.print-page {
+    background-color: white;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+/* ─── 物件選擇清單 ─── */
+.object-list,
+.template-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.object-item,
+.template-item {
+    padding: 12px;
+    background-color: #f9f9f9;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.object-item:hover,
+.template-item:hover {
+    background-color: #f0f0f0;
+    border-color: #2563eb;
+}
+
+.object-item strong,
+.template-item strong {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.object-item small,
+.template-item small {
+    display: block;
+    font-size: 12px;
+    color: #999;
+}
+
+/* ─── 列印樣式 ─── */
+@media print {
+    /* 隱藏所有不需要列印的元素 */
+    #toolbar,
+    .page-panel,
+    .props-panel,
+    .resize-handle,
+    .field-tag {
+        display: none !important;
+    }
+
+    /* 調整主版面 */
+    .main-layout {
+        height: 100%;
+        flex-direction: column;
+    }
+
+    .canvas-wrap {
+        background-color: white;
+        padding: 0;
+    }
+
+    /* 文字框：移除虛線，只保留文字 */
+    .textbox {
+        border: none !important;
+        background-color: transparent !important;
+        padding: 0 !important;
+        position: static !important;
+        cursor: default !important;
+        margin: 0 !important;
+    }
+
+    .textbox-content {
+        outline: none !important;
+    }
+
+    /* A4 尺寸和邊距設定 */
+    @page {
+        margin: var(--print-margin-top) var(--print-margin-right) var(--print-margin-bottom) var(--print-margin-left);
+        size: A4;
+    }
+
+    /* 隱藏非當前頁面 */
+    .print-page:not(.active-print) {
+        display: none !important;
+    }
+}
+
+/* ─── 響應式設計 ─── */
+@media (max-width: 1024px) {
+    .page-panel {
+        width: 100px;
+    }
+
+    .props-panel {
+        width: 200px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-layout {
+        flex-direction: column;
+    }
+
+    .page-panel {
+        width: 100%;
+        height: 80px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: 8px;
+    }
+
+    .page-list {
+        flex-direction: row;
+        overflow-x: auto;
+    }
+
+    .page-thumb {
+        min-width: 70px;
+        flex-shrink: 0;
+    }
+
+    .props-panel {
+        width: 100%;
+        height: 100px;
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 8px;
+    }
+
+    .props-content {
+        flex-direction: row;
+        gap: 8px;
+    }
+
+    .prop-group {
+        flex: 1;
+        min-width: 120px;
+    }
+}

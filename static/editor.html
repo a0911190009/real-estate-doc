@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>不動產說明書疊加編輯器</title>
+    <link rel="stylesheet" href="/css/editor.css">
+</head>
+<body>
+    <!-- ─── 頂部工具列 ─── -->
+    <div id="toolbar" class="toolbar">
+        <div class="toolbar-left">
+            <button id="btn-back" class="btn" title="返回">← 返回</button>
+            <span class="divider"></span>
+            <input type="file" id="file-bg" accept="image/png,image/jpeg" style="display:none;">
+            <button id="btn-upload-bg" class="btn" title="上傳底圖">📸 上傳底圖</button>
+            <button id="btn-add-box" class="btn" title="新增文字框">➕ 新增文字框</button>
+            <button id="btn-add-page" class="btn" title="新增頁面">📄 新增頁面</button>
+        </div>
+        <div class="toolbar-right">
+            <button id="btn-import-object" class="btn" title="從物件庫帶入">📦 帶入物件</button>
+            <button id="btn-save-template" class="btn" title="儲存模板">💾 儲存模板</button>
+            <button id="btn-load-template" class="btn" title="載入模板">📂 載入模板</button>
+            <button id="btn-print" class="btn btn-primary" title="列印預覽">🖨️ 列印預覽</button>
+        </div>
+    </div>
+
+    <!-- ─── 主版面：頁面欄 + 畫布 + 屬性欄 ─── -->
+    <div id="main-layout" class="main-layout">
+
+        <!-- 左側：頁面縮略圖欄 -->
+        <div id="page-panel" class="page-panel">
+            <div class="page-panel-title">頁面</div>
+            <div id="page-list" class="page-list">
+                <!-- 頁面縮圖會動態插入這裡 -->
+            </div>
+        </div>
+
+        <!-- 中央：編輯畫布 -->
+        <div id="canvas-wrap" class="canvas-wrap">
+            <div id="canvas-area" class="canvas-area">
+                <!-- 底圖 -->
+                <img id="bg-image" class="bg-image" src="" alt="底圖">
+                <!-- 文字框疊層 -->
+                <div id="textbox-layer" class="textbox-layer">
+                    <!-- 文字框會動態插入這裡 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：屬性面板 -->
+        <div id="props-panel" class="props-panel">
+            <div class="props-title">屬性設定</div>
+
+            <!-- 文字框未選取時的提示 -->
+            <div id="props-empty" class="props-empty">
+                請在畫布上選取或新增文字框
+            </div>
+
+            <!-- 文字框選取時的屬性 -->
+            <div id="props-content" class="props-content" style="display:none;">
+                <!-- 字型選擇 -->
+                <div class="prop-group">
+                    <label>字型</label>
+                    <select id="prop-font-family" class="input-select">
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="標楷體, serif">標楷體</option>
+                        <option value="新細明體, serif">新細明體</option>
+                        <option value="微軟正黑體, sans-serif">微軟正黑體</option>
+                    </select>
+                </div>
+
+                <!-- 字號 -->
+                <div class="prop-group">
+                    <label>字號 (pt)</label>
+                    <input type="number" id="prop-font-size" class="input-text" min="8" max="36" value="14">
+                </div>
+
+                <!-- 字色 -->
+                <div class="prop-group">
+                    <label>字色</label>
+                    <input type="color" id="prop-color" class="input-color" value="#000000">
+                </div>
+
+                <!-- 欄位對應 -->
+                <div class="prop-group">
+                    <label>欄位對應</label>
+                    <select id="prop-field-key" class="input-select">
+                        <option value="">（無）</option>
+                        <option value="address">地址</option>
+                        <option value="project_name">案名</option>
+                        <option value="price">售價</option>
+                        <option value="building_ping">建坪</option>
+                        <option value="land_ping">地坪</option>
+                        <option value="case_number">委託編號</option>
+                        <option value="location_area">區域</option>
+                    </select>
+                </div>
+
+                <!-- 刪除按鈕 -->
+                <div class="prop-group">
+                    <button id="btn-delete-box" class="btn btn-danger">🗑️ 刪除此框</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── 列印預覽 Modal ─── -->
+    <div id="print-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>列印預覽</h2>
+                <button class="modal-close" id="print-modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- 列印設定控制欄 -->
+                <div id="print-controls" class="print-controls">
+                    <div class="control-group">
+                        <label>上留白 (mm):</label>
+                        <input type="range" id="margin-top" class="slider" min="0" max="30" value="0">
+                        <span id="margin-top-value">0</span>
+                    </div>
+                    <div class="control-group">
+                        <label>下留白 (mm):</label>
+                        <input type="range" id="margin-bottom" class="slider" min="0" max="30" value="0">
+                        <span id="margin-bottom-value">0</span>
+                    </div>
+                    <div class="control-group">
+                        <label>左留白 (mm):</label>
+                        <input type="range" id="margin-left" class="slider" min="0" max="30" value="0">
+                        <span id="margin-left-value">0</span>
+                    </div>
+                    <div class="control-group">
+                        <label>右留白 (mm):</label>
+                        <input type="range" id="margin-right" class="slider" min="0" max="30" value="0">
+                        <span id="margin-right-value">0</span>
+                    </div>
+                </div>
+
+                <!-- 列印預覽區 -->
+                <div id="print-preview" class="print-preview">
+                    <!-- 列印版面會動態插入 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-print-execute" class="btn btn-primary">列印</button>
+                <button id="btn-print-cancel" class="btn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── 物件選擇 Modal ─── -->
+    <div id="object-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>選擇物件</h2>
+                <button class="modal-close" id="object-modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="object-list" class="object-list">
+                    <!-- 物件清單會動態插入 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── 模板選擇 Modal ─── -->
+    <div id="template-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>載入模板</h2>
+                <button class="modal-close" id="template-modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="template-list" class="template-list">
+                    <!-- 模板清單會動態插入 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── 儲存模板 Dialog ─── -->
+    <div id="save-template-modal" class="modal hidden">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h2>儲存模板</h2>
+                <button class="modal-close" id="save-template-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="prop-group">
+                    <label>模板名稱</label>
+                    <input type="text" id="template-title" class="input-text" placeholder="例：台東市住宅版本 1">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-save-template-confirm" class="btn btn-primary">儲存</button>
+                <button id="btn-save-template-cancel" class="btn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── 引入 JavaScript ─── -->
+    <script src="/js/editor-canvas.js"></script>
+    <script src="/js/editor-textbox.js"></script>
+    <script src="/js/editor-toolbar.js"></script>
+    <script src="/js/editor-objects.js"></script>
+    <script src="/js/editor-storage.js"></script>
+</body>
+</html>
