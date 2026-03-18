@@ -44,7 +44,12 @@ function initTextboxEvents() {
     // ── 滑鼠按下（開始拖曳 or 縮放 or 選取） ──
     layer.addEventListener("mousedown", (e) => {
         const boxEl = e.target.closest(".textbox");
-        if (!boxEl) return;
+
+        // 點擊畫布空白區域：取消選取並退出編輯
+        if (!boxEl) {
+            _deselectAll();
+            return;
+        }
 
         const boxId = boxEl.dataset.boxId;
 
@@ -56,9 +61,14 @@ function initTextboxEvents() {
             return;
         }
 
-        // 非編輯狀態才能拖曳（編輯中允許選取文字）
+        // 若目前框正在編輯中：退出編輯模式，選取框，但不啟動拖曳
+        // （第一次點擊退出編輯，第二次點擊才能拖曳）
         const content = boxEl.querySelector(".textbox-content");
-        if (content.contentEditable === "true") return;
+        if (content.contentEditable === "true") {
+            _exitEdit();
+            _selectBox(boxId);
+            return;
+        }
 
         e.preventDefault();
         _selectBox(boxId);
@@ -92,11 +102,8 @@ function initTextboxEvents() {
         }
     });
 
-    // ── 點擊背景取消選取 ──
-    const bgImg = document.getElementById("bg-image");
-    bgImg.addEventListener("mousedown", (e) => {
-        _deselectAll();
-    });
+    // 注意：bg-image 被 textbox-layer 蓋住，無法直接偵測點擊
+    // 點擊畫布空白的取消選取邏輯已移到 textbox-layer 的 mousedown 中（!boxEl 分支）
 }
 
 // ════════════════════════════════════════════════

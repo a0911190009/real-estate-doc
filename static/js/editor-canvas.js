@@ -131,10 +131,8 @@ function _uploadBgToServer(file, page) {
         .then(data => {
             if (data.ok) {
                 page.bgServerUrl = data.url;
-                // 此頁仍在顯示中才更新 bgImage.src
-                if (page === editorState.pages[editorState.currentPageIndex]) {
-                    DOM.bgImage.src = data.url;
-                }
+                // 不切換 DOM.bgImage.src，保留已顯示的 base64 預覽
+                // bgServerUrl 只供模板儲存時使用，編輯期間繼續用 base64
             }
         })
         .catch(err => {
