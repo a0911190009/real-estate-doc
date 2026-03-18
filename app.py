@@ -244,7 +244,11 @@ def portal_login():
         session["user_email"] = data.get("email", "")
         session["user_name"] = data.get("name", "")
         logger.info("Portal 登入成功: %s", session["user_email"])
-        return redirect("/")
+        # 支援 ?next= 參數指定登入後跳轉頁面（只允許站內相對路徑，防止開放重導向）
+        next_path = request.args.get("next", "/editor")
+        if not next_path.startswith("/") or "//" in next_path:
+            next_path = "/editor"
+        return redirect(next_path)
     except SignatureExpired:
         return "登入連結已過期，請返回入口重新登入", 403
     except BadSignature:
