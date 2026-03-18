@@ -1,0 +1,14 @@
+.gcloudignore
+.git
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+.env
+drafts/
+cover_config.json
+gunicorn.ctl
+*.sock
+update_js.py
+update_js2.py
+update_templates.py
