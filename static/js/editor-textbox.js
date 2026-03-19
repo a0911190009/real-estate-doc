@@ -61,13 +61,10 @@ function initTextboxEvents() {
             return;
         }
 
-        // 若目前框正在編輯中：退出編輯模式，選取框，但不啟動拖曳
-        // （第一次點擊退出編輯，第二次點擊才能拖曳）
+        // 若目前框正在編輯中：先退出，再繼續選取並啟動拖曳（不 return）
         const content = boxEl.querySelector(".textbox-content");
         if (content.contentEditable === "true") {
             _exitEdit();
-            _selectBox(boxId);
-            return;
         }
 
         e.preventDefault();

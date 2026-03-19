@@ -159,8 +159,9 @@ body {
 
 .bg-image {
     display: block;
-    max-width: 100%;
-    max-height: 100%;
+    /* 用視窗尺寸限制，避免與 fit-content 父元素產生循環依賴 */
+    max-width: calc(100vw - 420px);
+    max-height: calc(100vh - 120px);
 }
 
 .textbox-layer {
@@ -263,11 +264,13 @@ body {
     height: 100%;
     overflow: hidden;
     word-wrap: break-word;
+    user-select: none;  /* 非編輯模式下不允許文字選取（避免干擾拖曳） */
 }
 
 .textbox-content[contenteditable="true"] {
     outline: 1px solid #2563eb;
     background-color: white;
+    user-select: text;  /* 編輯模式恢復文字選取 */
 }
 
 .resize-handle {

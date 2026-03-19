@@ -51,9 +51,9 @@ function _newPage(idx) {
     };
 }
 
-/** 取得目前頁面有效的底圖 URL（優先用伺服器 URL） */
+/** 取得目前頁面有效的底圖 URL（編輯期間優先用 base64，伺服器 URL 作備用） */
 function _bgUrl(page) {
-    return page.bgServerUrl || page.bgDataUrl || "";
+    return page.bgDataUrl || page.bgServerUrl || "";
 }
 
 // ════════════════════════════════════════════════
@@ -156,6 +156,9 @@ function renderCurrentPage() {
     if (url) {
         DOM.bgImage.src = url;
         DOM.bgImage.style.display = "block";
+        // 清除無底圖時設的固定尺寸，讓畫布自適應圖片
+        DOM.canvasArea.style.width = "";
+        DOM.canvasArea.style.height = "";
     } else {
         DOM.bgImage.src = "";
         DOM.bgImage.style.display = "none";
@@ -223,10 +226,6 @@ function _appendTextboxEl(box) {
 
 function addTextbox() {
     const page = editorState.pages[editorState.currentPageIndex];
-    if (!_bgUrl(page)) {
-        alert("請先上傳底圖");
-        return;
-    }
 
     const box = {
         id:           "box-" + Date.now(),
