@@ -9,7 +9,7 @@ import json
 import uuid
 import base64
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from flask import Flask, request, jsonify, send_from_directory, session, redirect
 
 # 讀取環境變數（優先本專案 .env，其次上層 .env）
@@ -48,12 +48,14 @@ _secret = os.environ.get("FLASK_SECRET_KEY", "dev-only-key")
 app.secret_key = _secret
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = not os.environ.get("FLASK_DEBUG")
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)  # 手機瀏覽器會清除沒有到期日的 session cookie，設 30 天保持登入
 
 # ─── 開發模式：自動模擬登入 ───
 @app.before_request
 def auto_login_dev():
     """本地開發時，SKIP_AUTH=true 會自動模擬登入，跳過 Portal token 驗證"""
     if os.getenv('SKIP_AUTH'):
+        session.permanent = True  # 讓 cookie 帶 30 天到期日，手機不會被清除
         session['user_email'] = 'dev@test.com'
         session['user_name'] = '開發測試'
 
@@ -241,6 +243,7 @@ def portal_login():
     try:
         s = URLSafeTimedSerializer(app.secret_key)
         data = s.loads(token, max_age=300, salt="portal-sso")  # 需與 Portal 的 salt 一致
+        session.permanent = True  # 讓 cookie 帶 30 天到期日，手機不會被清除
         session["user_email"] = data.get("email", "")
         session["user_name"] = data.get("name", "")
         logger.info("Portal 登入成功: %s", session["user_email"])
