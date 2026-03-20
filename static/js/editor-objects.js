@@ -1,18 +1,23 @@
 /**
  * 不動產說明書編輯器 — 物件庫模組
- * 功能：呼叫後端 proxy API，帶入物件資料到文字框
+ * 功能：
+ *  1. 啟動時自動從物件庫 API 載入所有欄位，填入「欄位對應」下拉選單
+ *  2. 帶入物件資料到文字框
  */
 
-// ── 欄位對應表（物件庫 API 的欄位 key → 文字框 fieldKey） ──
-const FIELD_MAP = {
-    address:       "物件地址",
-    project_name:  "案名",
-    price:         "售價（萬）",
-    building_ping: "建坪",
-    land_ping:     "地坪",
-    case_number:   "委託編號",
-    location_area: "區域",
-};
+// ── 預設欄位清單（物件庫無法連線時的備援） ──
+const DEFAULT_FIELDS = [
+    { key: "address",       label: "地址" },
+    { key: "project_name",  label: "案名" },
+    { key: "price",         label: "售價" },
+    { key: "building_ping", label: "建坪" },
+    { key: "land_ping",     label: "地坪" },
+    { key: "case_number",   label: "委託編號" },
+    { key: "location_area", label: "區域" },
+];
+
+// ── 不顯示在欄位下拉的系統欄位（物件庫內部用） ──
+const SKIP_KEYS = new Set(["id", "user_id", "created_at", "updated_at", "deleted", "_id"]);
 
 // ════════════════════════════════════════════════
 // 初始化
@@ -21,7 +26,8 @@ const FIELD_MAP = {
 document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
         _bindObjectModal();
-    }, 100);
+        _loadFieldsIntoDropdown();  // 自動載入物件庫欄位
+    }, 150);
 });
 
 function _bindObjectModal() {
@@ -29,6 +35,66 @@ function _bindObjectModal() {
     document.getElementById("btn-import-object")?.addEventListener("click", _openObjectModal);
     document.getElementById("object-modal-close")?.addEventListener("click", () => modal.classList.add("hidden"));
     modal.addEventListener("click", e => { if (e.target === modal) modal.classList.add("hidden"); });
+}
+
+// ════════════════════════════════════════════════
+// 動態載入欄位清單到「欄位對應」下拉選單
+// ════════════════════════════════════════════════
+
+/**
+ * 呼叫物件庫 API，取得所有可用欄位，填入 #prop-field-key 下拉選單
+ * 如果 API 失敗，使用預設欄位清單
+ */
+function _loadFieldsIntoDropdown() {
+    fetch("/api/editor/objects")
+        .then(r => r.json())
+        .then(items => {
+            if (!items || !items.length) {
+                // 物件庫空的：用預設欄位
+                _populateFieldDropdown(DEFAULT_FIELDS);
+                return;
+            }
+
+            // 從所有物件取出所有 key，合併去重
+            const allKeys = new Set();
+            items.forEach(obj => {
+                Object.keys(obj).forEach(k => {
+                    if (!SKIP_KEYS.has(k)) allKeys.add(k);
+                });
+            });
+
+            // 轉成 [{key, label}] 格式（label 用 key 本身，已是中文就直接顯示）
+            const fields = Array.from(allKeys).map(k => ({ key: k, label: k }));
+            _populateFieldDropdown(fields);
+        })
+        .catch(() => {
+            // 物件庫未設定或連線失敗：靜默使用預設欄位
+            _populateFieldDropdown(DEFAULT_FIELDS);
+        });
+}
+
+/**
+ * 填入 #prop-field-key 選單
+ * fields: [{key, label}]
+ */
+function _populateFieldDropdown(fields) {
+    const sel = document.getElementById("prop-field-key");
+    if (!sel) return;
+
+    // 保留目前選取值
+    const currentVal = sel.value;
+
+    // 清空並重建（保留「無」選項）
+    sel.innerHTML = '<option value="">（無）</option>';
+    fields.forEach(f => {
+        const opt = document.createElement("option");
+        opt.value = f.key;
+        opt.textContent = f.label;
+        sel.appendChild(opt);
+    });
+
+    // 恢復選取值（若仍存在的話）
+    if (currentVal) sel.value = currentVal;
 }
 
 // ════════════════════════════════════════════════
@@ -61,11 +127,14 @@ function _renderObjectList(items) {
     items.forEach(obj => {
         const item = document.createElement("div");
         item.className = "object-item";
-        const price = obj.price ? `售價 ${obj.price} 萬` : "";
-        const ping  = obj.building_ping ? `建坪 ${obj.building_ping}` : "";
+        // 嘗試常見的標題欄位名稱
+        const title = obj.project_name || obj.案名 || obj.物件名稱 || obj.name || "未命名";
+        const addr  = obj.address || obj.地址 || obj.物件地址 || "";
+        const price = obj.price ? `售價 ${obj.price} 萬` : (obj.售價 ? `售價 ${obj.售價}` : "");
+        const ping  = obj.building_ping ? `建坪 ${obj.building_ping}` : (obj.建坪 ? `建坪 ${obj.建坪}` : "");
         item.innerHTML = `
-            <strong>${_esc(obj.project_name || "未命名")}</strong>
-            <small>${_esc(obj.address || "地址未設定")}</small>
+            <strong>${_esc(title)}</strong>
+            <small>${_esc(addr || "地址未設定")}</small>
             <small style="color:#888;">${[price, ping].filter(Boolean).join("　")}</small>
         `;
         item.addEventListener("click", () => _importObject(obj));
@@ -83,11 +152,11 @@ function _importObject(obj) {
 
     page.textboxes.forEach(box => {
         if (!box.fieldKey) return;
-        // fieldKey 對應到物件的哪個欄位
+        // fieldKey 對應到物件的哪個欄位（直接用 key 查）
         const value = obj[box.fieldKey];
         if (value !== undefined && value !== null && value !== "") {
             box.text = String(value);
-            // 即時更新 DOM（如果該框正在顯示）
+            // 即時更新 DOM
             const el = document.querySelector(`[data-box-id="${box.id}"] .textbox-content`);
             if (el) el.textContent = box.text;
             filled++;
@@ -96,11 +165,11 @@ function _importObject(obj) {
 
     document.getElementById("object-modal").classList.add("hidden");
 
-    const name = obj.project_name || "此物件";
+    const title = obj.project_name || obj.案名 || obj.物件名稱 || "此物件";
     if (filled > 0) {
-        _toast(`已帶入「${name}」的 ${filled} 個欄位`);
+        _toast(`已帶入「${title}」的 ${filled} 個欄位`);
     } else {
-        _toast(`「${name}」帶入完成（目前頁面沒有設定欄位對應的文字框）`);
+        _toast(`「${title}」帶入完成（目前頁面沒有設定欄位對應的文字框）`);
     }
 }
 
@@ -112,13 +181,7 @@ function _esc(str) {
     return String(str).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 
-// 使用 editor-toolbar.js 的 _toast（或自備備用版）
 function _toast(msg) {
-    if (typeof window._toast === "function") {
-        window._toast(msg);
-        return;
-    }
-    // 備用：直接在工具列的 _toast 定義之前，用 alert
     const el = document.createElement("div");
     el.textContent = msg;
     el.style.cssText = "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:6px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s;";
