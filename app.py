@@ -544,6 +544,8 @@ def api_save():
 
     try:
         save_draft(draft_id, data)
+        # 記錄說明書草稿儲存
+        log_event("doc_save", user_id=session.get("user_email", ""), detail={"title": title[:50]})
         return jsonify({"ok": True, "id": draft_id})
     except Exception as e:
         logger.error("儲存草稿失敗: %s", e)
