@@ -222,6 +222,25 @@ def gemini_extract(images_b64: list) -> dict:
 # 路由
 # ──────────────────────────────────────────────
 
+# ── LOG 工具函式 ──
+def log_event(event_type, user_id="", detail=None):
+    """記錄業務事件，輸出至 Cloud Logging（Cloud Run stdout 自動收集）。"""
+    print(json.dumps({
+        "time": datetime.now(timezone.utc).isoformat(),
+        "event": event_type,   # 事件名稱，例如 "doc_generate"
+        "user": user_id,
+        "detail": detail or {}
+    }, ensure_ascii=False), flush=True)
+
+
+@app.route("/api/client-log", methods=["POST"])
+def api_client_log():
+    """接收前端 JS 錯誤，記錄至 Cloud Logging。"""
+    data = request.get_json(silent=True) or {}
+    log_event("client_error", detail=data)
+    return jsonify({"ok": True})
+
+
 @app.route("/")
 @require_login
 def index():
@@ -280,6 +299,7 @@ def api_detect_fields():
     → 回傳 [{field_id, field_label, value, bbox:[x,y,w,h]}]
     bbox 為 0~1 的相對比例座標（左上角 x,y + 寬w + 高h）
     """
+    log_event("doc_detect_fields", user_id=session.get("user_email", ""))
     file = request.files.get("image")
     if not file:
         return jsonify({"error": "請上傳圖片"}), 400
