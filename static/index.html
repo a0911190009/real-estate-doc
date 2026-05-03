@@ -3547,5 +3547,27 @@ openCoverDesign = async function() {
 <link rel="stylesheet" href="https://real-estate-portal-334765337861.asia-east1.run.app/static/feedback-widget.css">
 <script src="https://real-estate-portal-334765337861.asia-east1.run.app/static/feedback-widget.js"></script>
 <script>FeedbackWidget.init({ tool: 'doc' });</script>
+<link rel="stylesheet" href="https://real-estate-portal-334765337861.asia-east1.run.app/static/upload-menu.css">
+<script src="https://real-estate-portal-334765337861.asia-east1.run.app/static/upload-menu.js"></script>
+<script>
+  /* 右鍵 / 長按選單：3 個上傳按鈕 */
+  document.addEventListener('DOMContentLoaded', function() {
+    if (!window.UploadMenu) return;
+    [
+      ['btn-upload', '#upload-input', true],
+      ['btn-smart-upload', '#smart-upload-input', false],
+      ['btn-region-upload-img', '#region-upload-input', false],
+    ].forEach(function(spec) {
+      var btn = document.getElementById(spec[0]);
+      if (btn) {
+        window.UploadMenu.attach(btn, {
+          paste: true, file: true, camera: true,
+          accept: 'image/*', multiple: spec[2],
+          targetInput: spec[1],
+        });
+      }
+    });
+  });
+</script>
 </body>
 </html>

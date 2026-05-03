@@ -211,5 +211,21 @@ window.addEventListener('unhandledrejection', function(e) {
     <link rel="stylesheet" href="https://real-estate-portal-334765337861.asia-east1.run.app/static/feedback-widget.css">
     <script src="https://real-estate-portal-334765337861.asia-east1.run.app/static/feedback-widget.js"></script>
     <script>FeedbackWidget.init({ tool: 'doc' });</script>
+    <link rel="stylesheet" href="https://real-estate-portal-334765337861.asia-east1.run.app/static/upload-menu.css">
+    <script src="https://real-estate-portal-334765337861.asia-east1.run.app/static/upload-menu.js"></script>
+    <script>
+      /* 右鍵 / 長按選單：上傳底圖 */
+      document.addEventListener('DOMContentLoaded', function() {
+        if (!window.UploadMenu) return;
+        var btn = document.getElementById('btn-upload-bg');
+        if (btn) {
+          window.UploadMenu.attach(btn, {
+            paste: true, file: true, camera: true,
+            accept: 'image/png,image/jpeg', multiple: false,
+            onFiles: function(files) { if (files[0] && typeof handleBgUpload === 'function') handleBgUpload(files[0]); },
+          });
+        }
+      });
+    </script>
 </body>
 </html>
